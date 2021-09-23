@@ -3,6 +3,18 @@ from django.views.generic import ListView, DetailView, CreateView
 from .models import Post, Comment
 from .forms import CommentForm
 
+from multiprocessing import Process
+import logging
+import configparser
+
+config = configparser.ConfigParser()
+config.read('cnf.ini')
+logging.basicConfig(
+level=config['LOGGING']['level'],
+filename=config['LOGGING']['filename']
+)
+log = logging.getLogger(__name__)
+
 
 class HomeView(ListView):
     model = Post
@@ -23,6 +35,7 @@ class PostDetailView(DetailView):
     slug_url_kwarg = 'post_slug'
 
     def get_context_data(self, **kwargs):
+        p = Process(target=log.info(f'{self.model.author}'))
         context = super().get_context_data(**kwargs)
         context['form'] = CommentForm()
         return context
@@ -33,6 +46,7 @@ class CreateComment(CreateView):
     form_class = CommentForm
 
     def form_valid(self, form):
+        p = Process(target=log.info(f'{self.model.name}'))
         form.instance.post_id = self.kwargs.get('pk')
         self.object = form.save()
         return super().form_valid(form)
